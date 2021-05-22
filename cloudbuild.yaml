@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/<PROJECT ID>/<TAG NAME>:latest', '.']
+
+- name: 'docker/compose:1.15.0'
+  args: ['up', '-d']
+  env:
+  - 'PROJECT_ID=<PROJECT ID>'
+images: ['gcr.io/<PROJECT ID>/<TAG NAME>:latest']

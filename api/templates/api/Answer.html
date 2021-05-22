@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Krikey Coding Challenge</title>
+    <style>
+        .content {
+            max-width: 500px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="content">
+    <!-- Page content -->
+    <h1>SQL Challenge</h1>
+    <l1>
+        <h3>Q1: Who are the first 10 authors ordered by date_of_birth?</h3>
+        <p>SELECT name as Author Name FROM authors ORDER_BY date_of_birth;</p>
+    </l1>
+    <br>
+    <l1>
+        <h3>Q2: What is the sales total for the author named “Lorelai Gilmore”?</h3>
+        <p>SELECT isbn as BookName books FROM WHERE books.author_id=(SELECT id FROM authors WHERE name="Lorelai
+            Gilmore");</p>
+    </l1>
+    <l1>
+        <h3>Q3: What are the top 10 performing authors, ranked by sales revenue?</h3>
+        <p>SELECT name AS AuthorName, item_price*quantity AS TotalPrice FROM authors JOIN salesitems ON
+            salesitems.book_id=books.id JOIN books ON books.author_id= authors.id ORDER BY TotalPrice DESC LIMIT
+            10; </p>
+    </l1>
+</div>
+
+</body>
+</html>
