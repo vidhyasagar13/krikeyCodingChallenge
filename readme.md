@@ -3,6 +3,11 @@
 ## Contents:
 1. Requirements
 2. Steps to run the project
+3. Load Data 
+4. Landing Page
+5. Endpoints
+6. Code Explanation
+7. Add more authors, books, salesitems
 
 ## Requirements
 
@@ -106,7 +111,16 @@ This step builds and pushes the image to google cloud container registry.
 > The above step will build the docker image first with the docker-compose file. If you need to change the username and password of the postgreSQL database, you can change either directly there or by replacing them and giving it in the environment variable.
 
 ### vii. Initialize the cluster for deploying our created image. 
+A cluster will be initialized using the cloudSDK with the number of nodes and certificates.
 
+```
+gcloud container clusters create <PROJECT ID OR WHATEVER NAME YOU WANT TO GIVE> --num-nodes 1 --issue-client-certificate --zone us-central1-a 
+```
+
+Once the cluster created, it will initialize Compute Engine and Virtual Machine instance as well which will serve as our cloud machine to host our API.
+You can check `console.cloud.google.com/compute/instances`
+
+### viii Apply the deployment.yml to create number of pods.   
 Go to your Google Cloud console and take a note of your image tag. 
 
 Like previous step, open `deployment.yml` and replace IMAGE TAG with the image tag that was displayed in your google cloud console.
@@ -120,7 +134,7 @@ The output will be similar to this
 ```
 ...... deployments created
 ```
-### viii. Initialize the cluster for deploying our created image. 
+### ix. Apply the service.yml to run the vm instance 
 
 The above step would have created the necessary pods and given some time the pods will show `STATUS : READY`
 
@@ -168,4 +182,141 @@ SERVICE NAME                INTERNAL IP   EXTERNAL IP  ....
 
 Voila, now you've successfully deployed the website to GCP kubernetes cluster.
 
+## Load Data
+
+A static test data can be loaded using the loaddata method. Three `.json` files is stored in `dumpeddata/` directory.
+
+Connect to the VM instance by SSH ing inside. This can be easily done using the gcloud GUI. Select SSH from the dropdown in the VM instances link.
+Once connected, run the following command  
+
+```
+cd krikeyCodingChallenge
+python manage.py createsuperuser
+```
+Follow the prompt.. and once it is done run the below commands
+```
+./manage.py loaddata authors.json
+./manage.py loaddata books.json
+./manage.py loaddata salesitems.json
+
+```
+
+## Landing Page
+This is how the landing page should look like. 
+
 ![](media/landing_page.png) 
+
+## Endpoint #1
+For the endpoint, please hit http://<EXTERNAL-IP>/api/v1/authors
+
+> The external IP should be replaced with the external IP address that was obtained from the services.
+
+![](media/authors.png)
+
+## Endpoint #2
+For the endpoint, please hit http://<EXTERNAL-IP>/api/v1/authors/?author=Lorelai%20Gilmore
+Here, a specific author is given in the GET parameter.
+
+![](media/lorelai%20gilmore.png) 
+
+## Endpoint #3
+If the given author name is not available in the database, then a HTTP 404 will be thrown.
+
+![](media/notavailable.png)
+
+
+## Code Explanation
+
+### Django Code
+
+#### URLs
+
+Take a look at the file `krikeyCodingChallenge/urls.py` where three urls are defined one for admin usage, one for api endpoints and one for landing page.
+
+1. Admin usage - This can be used to add more authors, books and sale items.
+
+2. API endpoints - Hit API app, which is created as a django-app in the same directory. This finds the defined urls inside `api/urls.py`. The defined pattern should have api in the start of resources.
+
+3. Landing page - Hits the answers view inside `api/views.py`. The pattern defined should have no characters. 
+ 
+Take a look at the file `api/urls.py` where there is only API endpoint pattern to serve the challenge purpose.
+
+#### Views
+
+Take a look at the file `api/views.py` where there is a APIView Instance created to provide REST API service.
+This takes an optional author name and returns a JSON Response with the status code of the result. 
+
+The JSON response will either be a list of top 10 authors names and sales revenue ordered by the sales revenue or when a author name is given the author's name and sales revenue is returned.
+This will also return a 404 response, when an author name specified is not found in our database. 
+
+The results are returned using raw postgreSQL queries and also I have commented out the Django ORM queries for future use cases.
+
+
+#### Landing Page
+
+The landing page has the solution for the SQL Challenge. The results are also shown in the table.
+ 
+
+#### Deployment Code
+
+*cloudbuild.yml*
+
+The very first step is the `gcloud builds submit .`. This will look for the default file, this is the `cloudbuild.yml file`.
+
+This file has the instructions step wise what to do before pushing the docker image to the container registry in google cloud.
+
+The first step is building the image using docker. The docker tag is mentioned in the args parameter. This tag is then used in the gcloud container registry.
+The next step is docker-compose and pushing the built docker image to container registry.
+
+*deployment.yml*
+
+Retrives the pushed image and set ups the cluster pod with the defined port numbers.
+
+*service.yml*
+
+By specifying the type as a 'LoadBalancer', Container Engine will create an external HTTP load balancer.
+The port 80 is mapped to port 8080 so that whenever the external IP is hit, it gets re-routed to port number 8080.
+
+
+#### Add more authors, books and saleitems
+
+Go to a browser and hit http://<EXTERNAL-IP>/admin
+
+The page should look like,
+
+![](media/admin-page.png)
+
+> Login using the username, password that was used when creating a super user.
+
+Once logged in, the GUI will be super intutive to add new authors, books, salesitems. 
+Attached images for understanding...
+
+![](media/djangohome.png)
+
+Any one of the tables can be selected from the list here. http://<EXTERNAL-IP>/admin
+
+![](media/selectauthor.png)
+
+All authors list will be displayed in the http://<EXTERNAL-IP>/admin/api/author/
+
+![](media/addAuthor.png)
+
+A new author can be added here. http://<EXTERNAL-IP>/admin/api/author/add 
+
+![](media/select%20book.png)
+
+All books list will be displayed in the http://<EXTERNAL-IP>/admin/api/book/
+
+![](media/addbook.png)
+
+A new book can be added here. http://<EXTERNAL-IP>/admin/api/book/add/
+
+![](media/select%20sales.png)
+
+All customers list will be displayed in the http://<EXTERNAL-IP>/admin/api/salesitem/
+
+![](media/add_sales_item.png)
+
+A new Sales Item can be added here. http://<EXTERNAL-IP>/admin/api/salesitem/add/
+
+

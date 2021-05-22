@@ -16,18 +16,27 @@ class GetAuthors(APIView):
     def get(self, request):
         status = 200
         if 'author' in request.GET:
-            authors = SalesItem.objects.filter(book__author__name=request.GET['author']).values(
-                'book__author__name').annotate(total_price=F('item_price') * F('quantity')).annotate(
-                total_price=Sum('total_price')).values('book__author__name', 'total_price')
+            authors = SalesItem.objects.raw('SELECT "api_author"."name", SUM(("api_salesitem"."item_price" * "api_salesitem"."quantity")) AS "total_price" FROM "api_salesitem" INNER JOIN "api_book" ON ("api_salesitem"."book_id" = "api_book"."id") INNER JOIN "api_author" ON ("api_book"."author_id" = "api_author"."id") WHERE "api_author"."name" = Lorelai Gilmore GROUP BY "api_author"."name"')
+
+            # authors = SalesItem.objects.filter(book__author__name=request.GET['author']).values(
+            #     'book__author__name').annotate(total_price=F('item_price') * F('quantity')).annotate(
+            #     total_price=Sum('total_price')).values('book__author__name', 'total_price')
+
             if authors:
                 response = {'authors': authors}
+
             else:
+
                 response = {'author': 'Author Not found'}
                 status = 404
         else:
-            authors = SalesItem.objects.values('book__author__name').annotate(
-                total_price=F('item_price') * F('quantity')).annotate(total_price=Sum('total_price')).order_by(
-                '-total_price').values('book__author__name', 'total_price')[:10]
+
+            authors = SalesItem.objects.raw('SELECT "api_author"."name", SUM(("api_salesitem"."item_price" * "api_salesitem"."quantity")) AS "total_price" FROM "api_salesitem" INNER JOIN "api_book" ON ("api_salesitem"."book_id" = "api_book"."id") INNER JOIN "api_author" ON ("api_book"."author_id" = "api_author"."id") GROUP BY "api_author"."name" ORDER BY "total_price" DESC')
+
+            # authors = SalesItem.objects.values('book__author__name').annotate(
+            #     total_price=F('item_price') * F('quantity')).annotate(total_price=Sum('total_price')).order_by(
+            #     '-total_price').values('book__author__name', 'total_price')[:10]
+
             response = {'authors': authors}
 
         return Response(response, status=status)
@@ -38,7 +47,6 @@ def answers(request):
     q2 = SalesItem.objects.filter(book__author__name='Lorelai Gilmore').values(
                 'book__author__name').annotate(total_price=F('item_price') * F('quantity')).annotate(
                 total_price=Sum('total_price')).values('book__author__name', 'total_price')
-    print(q2)
     q3 = SalesItem.objects.values('book__author__name').annotate(
                 total_price=F('item_price') * F('quantity')).annotate(total_price=Sum('total_price')).order_by(
                 '-total_price').values('book__author__name', 'total_price')[:10]
