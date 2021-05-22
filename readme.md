@@ -298,7 +298,7 @@ The landing page has the solution for the SQL Challenge. The results are also sh
 
 #### Deployment Code
 
-*cloudbuild.yml*
+**cloudbuild.yml**
 
 The very first step is the `gcloud builds submit .`. This will look for the default file, this is the `cloudbuild.yml file`.
 
@@ -307,7 +307,7 @@ This file has the instructions step wise what to do before pushing the docker im
 The first step is building the image using docker. The docker tag is mentioned in the args parameter. This tag is then used in the gcloud container registry.
 The next step is docker-compose and pushing the built docker image to container registry.
 
-*Dockerfile*
+**Dockerfile**
 
 Uses python:3 which takes the entire coding directory to code/ and installs the requirements by using requirements.txt file.
 
@@ -322,7 +322,7 @@ COPY . /code/
 
 ```
 
-*docker-compose.yml*
+**docker-compose.yml**
 
 The compose file will run the command migrate to make any database schema changes and starts the server in the port 8080.
 Initializes the postgres with the defined username, password. The port for postgres is given as 5432 and the port 8080 is exposed outside.
@@ -356,7 +356,7 @@ services:
       - "5432:5432"
 ```
 
-*deployment.yml*
+**deployment.yml**
 
 Retrives the pushed image and set ups the cluster pod with the defined port numbers.
 
@@ -385,7 +385,7 @@ spec:
             value: "8080"
 ```
 
-*service.yml*
+**service.yml**
 
 By specifying the type as a 'LoadBalancer', Container Engine will create an external HTTP load balancer.
 The port 80 is mapped to port 8080 so that whenever the external IP is hit, it gets re-routed to port number 8080.
