@@ -97,6 +97,45 @@ git clone https://github.com/vidhyasagar13/krikeyCodingChallenge.git
 
 ### vi. Initialize the image in the Google Clound Container Registry
 
+#### v1(A). If Authenticated already, skip the step and go to vi(B).
+
+Create a new service account key to authencticate you cloudSDK.
+Run the following command or go to GUI to create a new key and download it.
+```
+gcloud iam service-accounts create key
+
+PROJECT_ID=<PROJECT ID>
+CLIENT_EMAIL=keys@<PROJECT ID>.iam.gserviceaccount.com
+CLIENT_ID=$(gcloud iam service-accounts \
+        describe keys@<PROJECT ID>.iam.gserviceaccount.com \
+    --format 'value(uniqueId)')
+
+```
+
+This will create a new key.json file and store it in the directory which will look similar to this...
+
+```
+{
+  "type": "service_account",
+  "project_id": "<PROJECT_ID>",
+  "private_key_id": "<PRIVATE_KEY_ID>",
+  "private_key": "<PRIVATE_KEY>",
+  "client_email": "<CLIENT_EMAIL>.gserviceaccount.com",
+  "client_id": "<CLIENT_ID>",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/<CERT_URL>gserviceaccount.com"
+}
+```
+After this, run the following to authenticate our CloudSDK.
+
+```
+gcloud auth activate-service-account \
+  --key-file key.json
+```
+
+#### vi(B). Checks with cloudbuild.yaml
 > Open `cloudbuild.yaml` file and replace the project_id with your project id created in the google cloud. Also, change the TAG NAME to a name you want.
 
 > After replacing, run the following command.
@@ -268,16 +307,103 @@ This file has the instructions step wise what to do before pushing the docker im
 The first step is building the image using docker. The docker tag is mentioned in the args parameter. This tag is then used in the gcloud container registry.
 The next step is docker-compose and pushing the built docker image to container registry.
 
+*Dockerfile*
+
+Uses python:3 which takes the entire coding directory to code/ and installs the requirements by using requirements.txt file.
+
+```
+# syntax=docker/dockerfile:1
+FROM python:3
+ENV PYTHONUNBUFFERED=1
+WORKDIR /code
+COPY requirements.txt /code/
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . /code/
+
+```
+
+*docker-compose.yml*
+
+The compose file will run the command migrate to make any database schema changes and starts the server in the port 8080.
+Initializes the postgres with the defined username, password. The port for postgres is given as 5432 and the port 8080 is exposed outside.
+```
+version: "3"
+
+services:
+  web:
+    restart: always
+    build: .
+    command: python mange.py migrate && python manage.py runserver 0.0.0.0:8080
+    volumes:
+      - .:/code
+    ports:
+      - "8080:8080"
+    expose:
+      - 8080
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - PGDATA=/tmp
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+```
+
 *deployment.yml*
 
 Retrives the pushed image and set ups the cluster pod with the defined port numbers.
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: <PROJECT ID>
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: <PROJECT ID>
+  template:
+    metadata:
+      labels:
+        app: <PROJECT ID>
+    spec:
+      containers:
+      - name: <PROJECT ID>
+        image: gcr.io/<PROJECT ID>/gcb-docker-compose:latest
+        ports:
+        - containerPort: 8080
+        env:
+          - name: PORT
+            value: "8080"
+```
 
 *service.yml*
 
 By specifying the type as a 'LoadBalancer', Container Engine will create an external HTTP load balancer.
 The port 80 is mapped to port 8080 so that whenever the external IP is hit, it gets re-routed to port number 8080.
 
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: <PROJECT ID>
+spec:
+  type: LoadBalancer
+  selector:
+    app: <PROJECT ID>
+  ports:
+  - port: 80
+    targetPort: 8080
 
+```
 #### Add more authors, books and saleitems
 
 Go to a browser and hit http://<EXTERNAL-IP>/admin
