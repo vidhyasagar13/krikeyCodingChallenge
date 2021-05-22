@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: krikeycodingchallenge
+  name: <PROJECT ID>
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: krikeycodingchallenge
+      app: <PROJECT ID>
   template:
     metadata:
       labels:
-        app: krikeycodingchallenge
+        app: <PROJECT ID>
     spec:
       containers:
-      - name: krikeycodingchallenge
+      - name: <PROJECT ID>
         image: gcr.io/<PROJECT ID>/gcb-docker-compose:latest
         ports:
         - containerPort: 8080

@@ -168,3 +168,4 @@ SERVICE NAME                INTERNAL IP   EXTERNAL IP  ....
 
 Voila, now you've successfully deployed the website to GCP kubernetes cluster.
 
+![](media/landing_page.png) 

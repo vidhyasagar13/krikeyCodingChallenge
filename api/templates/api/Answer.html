@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <title>Krikey Coding Challenge</title>
     <style>
         .content {
@@ -16,19 +21,70 @@
     <h1>SQL Challenge</h1>
     <l1>
         <h3>Q1: Who are the first 10 authors ordered by date_of_birth?</h3>
-        <p>SELECT name as Author Name FROM authors ORDER_BY date_of_birth;</p>
+        <p>SELECT name, date_of_birth FROM authors ORDER BY date_of_birth ASC LIMIT 10;</p>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Date of Birth</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for author in q1 %}
+            <tr>
+                <td>{{ author.name }}</td>
+                <td>{{  author.date_of_birth|date:"m / d / Y" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </l1>
     <br>
     <l1>
         <h3>Q2: What is the sales total for the author named “Lorelai Gilmore”?</h3>
-        <p>SELECT isbn as BookName books FROM WHERE books.author_id=(SELECT id FROM authors WHERE name="Lorelai
-            Gilmore");</p>
+        <p>SELECT authors.name, SUM((item_price*quantity)) AS total_price FROM salesitem INNER JOIN book ON
+            (salesitem.book_id=book.id) INNER JOIN authors ON (book.author_id=authors.id) WHERE authors.name='Lorelai
+            Gilmore' GROUP BY authors.name;</p>
+
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Total Price</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for items in q2 %}
+            <tr>
+                <td>{{ items.book__author__name }}</td>
+                <td>{{ items.total_price }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
     </l1>
     <l1>
         <h3>Q3: What are the top 10 performing authors, ranked by sales revenue?</h3>
-        <p>SELECT name AS AuthorName, item_price*quantity AS TotalPrice FROM authors JOIN salesitems ON
+        <p>SELECT authors.name AS AuthorName, item_price*quantity AS TotalPrice FROM authors JOIN salesitems ON
             salesitems.book_id=books.id JOIN books ON books.author_id= authors.id ORDER BY TotalPrice DESC LIMIT
             10; </p>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Total Price</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for items in q3 %}
+            <tr>
+                <td>{{ items.book__author__name }}</td>
+                <td>{{ items.total_price }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </l1>
 </div>
 
